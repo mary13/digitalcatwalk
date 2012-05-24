@@ -1,0 +1,75 @@
+// this is a mashup of OpenCV Video Capture and Processing Mirroring Code
+
+void AMdraw() {
+  opencv.read();                   // grab frame from camera
+  opencv.convert( GRAY );
+  background(0);
+  PImage camImage;                //  Creates an image and
+  camImage = opencv.image();      //  stores the unprocessed camera frame in it
+
+  opencv.absDiff();               //  Calculates the absolute difference
+  opencv.convert( OpenCV.GRAY );  //  Converts the difference image to greyscale
+  opencv.blur( OpenCV.BILATERAL, 50 );  //  I like to blur before taking the difference image to reduce camera noise*/
+  opencv.threshold( thres);
+  smooth();
+
+
+  //  trailsImg.blend( opencv.image(), 0, 0, 640, 480, 0, 0, 640, 480, SCREEN );  //  Blends the movement image with the trails image
+  trailsImg.blend( opencv.image(), 0, 0, capturewidth, captureheight, 0, 0, capturewidth, captureheight, SCREEN );  //  Blends the movement image with the trails image
+
+  colorMode(RGB);                 //  Changes the colour mode to HSB so that we can change the hue
+  tint(color(149, 240, 242));  //  Sets the tint so that the hue is equal to hcycle and the saturation and brightness are at 100%
+
+
+  // image( trailsImg, 0, 0 );       //  Display the blended difference image*/
+
+  noTint();                       //  Turns tint off
+  colorMode(RGB);                 //  Changes the colour mode back to the default
+
+  // blend( camImage, 0, 0, capturewidth, captureheight, 0, 0, capturewidth, captureheight, SCREEN );  //  Blends the original image with the trails image
+
+  opencv.copy( trailsImg );       //  Copies trailsImg into OpenCV buffer so we can put some effects on it
+  opencv.blur( OpenCV.BILATERAL, 50 );  //  Blurs the trails image
+  opencv.brightness( -50 );       //  Sets the brightness of the trails image to -20 so it will fade out
+  trailsImg = opencv.image();     //  Puts the modified image from the buffer back into trailsImg
+  background(0);
+  opencv.remember();              //  Remembers the current frame
+
+
+  // MIRRORING 
+  for (int i = 0; i < cols;i++) {
+    // Begin loop for rows
+    for (int j = 0; j < rows;j++) {
+
+      // Where are we, pixel-wise?
+      int x = i * cellSize;
+      int y = j * cellSize;
+      int loc = ((trailsImg.width + x/display_multiplier) + y/display_multiplier*trailsImg.width); // x to mirror the image
+
+      float linex = random(50);
+      float liney = random(50);
+      // Each rect is colored white with a size determined by brightness
+      color c = trailsImg.pixels[loc];
+      float sz = (brightness(c) / 255.0) * cellSize;
+
+      if (sz > 11) {
+        stroke(186, 216, 222);
+        strokeWeight(random(1));
+        line((x + cellSize/2)-liney+30, (y + cellSize/2)- linex+30, ((x + cellSize/2)+liney-30), ((y + cellSize/2)+linex-30));
+
+        noFill();
+        noStroke();
+        fill(186, 216, 222, random(150));
+        triangle(x, y, x - 15, y + 25, x + 15, y + 25);
+      }
+      else if (sz <= 11) {
+
+        fill(255, random(255));
+        ellipse(x + cellSize/2, y + cellSize/2, sz, sz);
+      }
+    }
+  }
+
+  renderTexture(pgl.gl);    ///// FOR SYPHON
+}
+
